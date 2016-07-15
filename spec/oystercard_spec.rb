@@ -1,9 +1,12 @@
 require "oystercard"
 
+
 describe Oystercard do
-  let(:entry_station) { double :station }
-  let(:exit_station) {double :station}
-  let(:journey){ {entry_station: entry_station, exit_station: exit_station} }
+  let(:entry_station) { double :station, zone: 1}
+  let(:exit_station) {double :station, zone: 1}
+  let(:second_station) { double :station, zone: 1}
+
+  let(:journey) {double Journey, entry_station: entry_station , exit_station: exit_station}
 
   it 'checks to see if the balance is 0' do
     expect(subject.balance).to eq 0
@@ -45,17 +48,32 @@ describe Oystercard do
     it 'touch in' do
       expect(subject).to be_in_journey
     end
+
+    it "second touch in charges penalty fare" do
+      subject.top_up(20)
+      expect{subject.touch_in(second_station)}.to change{subject.balance}.by -Oystercard::PENALTY_FARE
+    end
     it 'touch out' do
       subject.touch_out(exit_station)
       expect(subject.in_journey?).to eq false
+    end
+
+    it "second touch out charges penalty fare" do
+      subject.touch_out(exit_station)
+      expect{subject.touch_out(second_station)}.to change {subject.balance}.by -Oystercard::PENALTY_FARE
     end
     it 'charge balance on touch out' do
       expect{ subject.touch_out(exit_station) }.to change{ subject.balance }.by -Oystercard::MINIMUM_FARE
     end
 
-    it 'stores a journey' do
+    context "#journey_history" do
+    it "should return a list of journeys made" do
+      subject.top_up(Oystercard::MINIMUM_FARE)
+      subject.touch_in(entry_station)
       subject.touch_out(exit_station)
-      expect(subject.journey_history_array).to include journey
+      expect(subject.journey_history_array.last.entry_station).to eq entry_station
     end
   end
+  end
+
 end

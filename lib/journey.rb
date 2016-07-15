@@ -1,28 +1,27 @@
 class Journey
-  PENALTY_FARE = 6
   MINIMUM_FARE = 1
-  attr_accessor :entry_station, :exit_station
+  PENALTY_FARE = 6
+  UNRECORDED_STATION = "Unknown"
+  attr_reader :entry_station, :exit_station
 
-  def initialize (entry_station:)
+  def initialize(entry_station = UNRECORDED_STATION)
     @entry_station = entry_station
-    @exit_station
   end
+
+  def finish_journey(exit_station = UNRECORDED_STATION)
+    @exit_station = exit_station
+    self
+  end
+
   def complete?
-    !!exit_station
+   true unless !!entry_station && exit_station == nil
   end
 
   def fare
-    if complete?
-      MINIMUM_FARE
-    else
+    if entry_station == UNRECORDED_STATION|| exit_station == UNRECORDED_STATION
       PENALTY_FARE
-    end 
-  end
-
-  def finish(station)
-    self.exit_station = station
-    self
-
-
+    else
+      MINIMUM_FARE
+    end
   end
 end

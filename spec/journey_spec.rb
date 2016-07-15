@@ -1,36 +1,37 @@
-require 'journey'
+require "journey"
 describe Journey do
-let(:station) {double :station, zone: 1}
-context "given an entry station" do
-  subject {described_class.new(entry_station: station)}
 
-  it "knows if a journey is not complete" do
+  let(:entry_station) {double(:station)}
+  let(:exit_station) {double(:station)}
+  subject{described_class.new(entry_station)}
+
+  it "should know its entry_station" do
+    expect(subject.entry_station).to eq entry_station
+  end
+
+  it "finishes the journey" do
+    expect(subject.finish_journey(exit_station)).to eq subject
+  end
+
+  context "#complete" do
+  it "is not complete in the beginning" do
     expect(subject).not_to be_complete
   end
 
-  it "has a penalty fare by default" do
-    expect(subject.fare).to eq Journey::PENALTY_FARE
+  it "is complete after finishing journey" do
+    subject.finish_journey(exit_station)
+    expect(subject).to be_complete
   end
-
-  it "returns itself when finishing a journey" do
-    expect(subject.finish(station)).to eq(subject)
   end
-
-  it "has an entry station" do
-      expect(subject.entry_station).to eq station
-  end
-
-  it "returns minimum fare if exit station given" do
-    subject.finish(station)
-    expect(subject.fare).to eq Journey::MINIMUM_FARE
-  end
-
-  it "returns penalty fare if no exit given" do
-    expect(subject.fare).to eq Journey::PENALTY_FARE
-  end 
-
+  context "#fare" do
+    it "returns minimum_fare when it is complete" do
+      subject.finish_journey(exit_station)
+      expect(subject.fare).to eq Journey::MINIMUM_FARE
+    end
+    it "returns penalty fare when there is no exit station" do
+      subject.finish_journey
+      expect(subject.fare).to eq Journey::PENALTY_FARE
+    end
 
   end
-
-
 end
