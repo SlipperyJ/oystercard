@@ -1,16 +1,21 @@
 require 'oystercard'
+
 describe Oystercard do
-
-  subject { Oystercard.new }
-
-  it 'should have balance' do
-    expect(subject).to receive(:balance)
-    subject.balance
+  it 'new oystercard has a balance of 0' do
+    expect(subject.balance).to eq 0
   end
 
-context "top up"
-  it { is_expected.to respond_to(:top_up).with(1).arguments }
-  it "should be able to top up the balance" do
-    expect { subject.top_up(10) }.to change { subject.balance }.by(10)
+  it "should increase the balance by top up amount" do
+    expect{subject.top_up(10)}.to change{subject.balance}.by(+10)
+  end
+
+  it "should deduct the balance by deduction amount" do
+    expect{subject.deduct(10)}.to change{subject.balance}.by(-10)
+  end
+
+  it 'should throw an excption if balance exceeds 90' do
+    maximum = Oystercard::MAX_BALANCE
+    expect{ subject.top_up(maximum+1) }.to raise_error 'Maximum amount exceeded'
+
   end
 end
