@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 -fd
 --color
 --require spec_helper
 -fd
+=======
+--color --format documentation
+--require spec_helper
+>>>>>>> friday

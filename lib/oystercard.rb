@@ -1,56 +1,56 @@
-require_relative 'journey.rb'
+require_relative 'station'
+require_relative 'journey'
 
 class Oystercard
-
-  MAX_BALANCE = 90
-  MIN_BALANCE = 1
-  MIN_CHARGE = 1
-  PENALTY_CHARGE = 6
-
-  attr_reader :balance, :journey_history
-
+  MAXIMUM_BALANCE = 90
+  MINIMUM_FARE = 1
+  PENALTY_FARE = 6
+  attr_accessor :balance, :journey_history_array, :journey, :dummy_journey
 
   def initialize
     @balance = 0
-    @journey = nil
-    @journey_history = []
+    @journey_history_array = []
   end
 
   def top_up(amount)
-    raise 'Maximum amount exceeded' if (balance + amount) > MAX_BALANCE
-    @balance += amount
+    fail "Maximum balance of #{MAXIMUM_BALANCE} exceeded" if amount + balance > MAXIMUM_BALANCE
+    self.balance += amount
   end
 
-  def in_journey?
-    @journey
+  def settle_journey(station = Journey::UNRECORDED_STATION)
+    journey.finish_journey(station)
+    deduct(journey.fare)
+    store_journey
   end
 
   def touch_in(station)
-    fail "you need at least £1 to travel" if balance < MIN_BALANCE
-
-    if @journey
-      deduct(@journey.fare)
-      store_journey
-    end
-
+    sufficient_balance_check?
+    settle_journey if journey
     @journey = Journey.new(station)
   end
 
   def touch_out(station)
-    @journey = Journey.new(nil) unless @journey
-    @journey.exit_station = station
-    deduct(@journey.fare)
-    store_journey
+    @journey = Journey.new if journey == nil || journey.complete?
+    settle_journey(station)
+    self.journey = nil
   end
 
-  private
+def in_journey?
+  !!(journey != nil && !journey.complete?)
+end
 
+private
+
+attr_accessor :exit_station, :entry_station
   def store_journey
-    @journey_history << @journey
-    @journey = nil
+    self.journey_history_array << journey
   end
 
   def deduct(amount)
-    @balance -= amount
+    self.balance -= amount
+  end
+
+  def sufficient_balance_check?
+    raise "insufficient funds" if balance < MINIMUM_FARE
   end
 end
