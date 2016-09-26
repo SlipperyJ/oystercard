@@ -5,6 +5,7 @@ min_balance = Oystercard::MIN_BALANCE
 
 describe Oystercard do
 let(:entry_station) { double :entry_station }
+let(:exit_station) { double :exit_station }
 
   context "#balance" do
     it 'new oystercard has a balance of 0' do
@@ -42,14 +43,14 @@ let(:entry_station) { double :entry_station }
     end
 
     it "should prevent travelling when balance is below £1" do
-      subject.touch_out
+      subject.touch_out(exit_station)
       expect{ subject.touch_in(entry_station) }.to raise_error "you need at least £1 to travel"
     end
 
-    it "should record entry_station" do
-      expect(subject).to respond_to(:touch_in).with(1).argument
-      expect(subject.entry_station).to eq entry_station
+    it "should deduct a penalty fare when touching in twice in a row" do
+      expect{subject.touch_in(entry_station)}.to change{ subject.balance }.by(-Oystercard::PENALTY_CHARGE)
     end
+
   end
 
   context "#touch_out" do
@@ -60,18 +61,36 @@ let(:entry_station) { double :entry_station }
     end
 
     it "should allow a user to touch_out" do
-      subject.touch_out
+      subject.touch_out(exit_station)
       expect(subject).to_not be_in_journey
     end
 
-    it "should deduct minimum fare when touching out" do
-      expect{ subject.touch_out }.to change{ subject.balance }.by(-min_balance)
+    it "should deduct minimum fare when touching out after touching in" do
+      expect{ subject.touch_out(exit_station) }.to change{ subject.balance }.by(-min_balance)
     end
 
-    it "should forget entry_station station on touch_out" do
-      #expect{subject.touch_out}.to change(entry_station).to nil
-      subject.touch_out
-      expect(subject.entry_station).to be_nil
+    it "should deduct penalty fare when touching out without first touching in" do
+      subject.touch_out(exit_station)
+      expect{ subject.touch_out(exit_station) }.to change{ subject.balance }.by(-Oystercard::PENALTY_CHARGE)
+    end
+
+    it "should end journey on touch_out" do
+      subject.touch_out(exit_station)
+      expect(subject).not_to be_in_journey
+    end
+
+    it { is_expected.to respond_to(:touch_out).with(1).argument }
+  end
+  context "#journey_history" do
+    it "should return a list of journeys made" do
+      subject.top_up(max_balance)
+      subject.touch_in(entry_station)
+      subject.touch_out(exit_station)
+      expect(subject.journey_history.last.entry_station).to eq entry_station
+    end
+
+    it "should be empty when initialized" do
+      expect(subject.journey_history).to be_empty
     end
   end
 end
